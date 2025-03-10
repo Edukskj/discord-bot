@@ -4,6 +4,7 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  MessageFlags,
 } = require("discord.js");
 
 const ranking = [
@@ -49,7 +50,9 @@ module.exports = {
             medal = "🥉";
             break;
         }
-        description += `**${overallIndex + 1}.** ${player.nome} ${medal}\n${player.pontos} pontos\n\n`;
+        description += `**${overallIndex + 1}.** ${player.nome} ${medal}\n${
+          player.pontos
+        } pontos\n\n`;
       });
 
       return new EmbedBuilder()
@@ -82,7 +85,7 @@ module.exports = {
     await interaction.reply({
       embeds: [embed],
       components: [buttons],
-      ephemeral: false,
+      flags: MessageFlags.Ephemeral,
     });
   },
 };
