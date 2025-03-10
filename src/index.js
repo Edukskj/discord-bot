@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Collection, Events } = require("discord.js");
+const {  Client,  GatewayIntentBits,  Collection,  Events,  EmbedBuilder,  ActionRowBuilder,  ButtonBuilder,  ButtonStyle,} = require("discord.js");
 
 const client = new Client({
   intents: [
