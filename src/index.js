@@ -49,7 +49,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isButton()) return;
 
   if (interaction.customId === "primary_button") {
-    return interaction.reply("Você clicou no botão primário!");
+    return interaction.reply("you clicked the primary button");
   }
 
   if (
