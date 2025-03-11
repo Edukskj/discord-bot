@@ -3,10 +3,13 @@ const db = new Database('database.db');
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS jogadores (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    discord_id TEXT PRIMARY KEY,
     nome TEXT,
-    posicao INTEGER,
-    kills INTEGER
+    level INTEGER,
+    partidas INTEGER,
+    kills INTEGER,
+    vitorias INTEGER,
+    posicao INTEGER
   )
 `);
 
