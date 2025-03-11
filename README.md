@@ -13,3 +13,8 @@ To activate your bot online, use
 ```cmd
 npm run dev
 ```
+
+Install Sqlite
+```cmd
+npm install better-sqlite3
+```
