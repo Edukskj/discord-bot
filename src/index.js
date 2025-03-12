@@ -48,28 +48,8 @@ client.on("interactionCreate", async (interaction) => {
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isButton()) return;
 
-  if (interaction.customId === "primary_button") {
-    return interaction.reply("you clicked the primary button");
-  }
-
-  if (
-    interaction.customId.startsWith("leaderboard_prev_") ||
-    interaction.customId.startsWith("leaderboard_next_")
-  ) {
-    const ranking = [
-      { nome: "R4ndomJ", pontos: 75 },
-      { nome: "Obammy", pontos: 75 },
-      { nome: "@plot3sale", pontos: 50 },
-      { nome: "NTS Reaper", pontos: 50 },
-      { nome: "SR Mccock", pontos: 50 },
-      { nome: "Rytas", pontos: 43 },
-      { nome: "Lay Jeno", pontos: 43 },
-      { nome: "Matt8", pontos: 43 },
-      { nome: "Herikawa", pontos: 39 },
-      { nome: "proaxiscockpit1", pontos: 31 },
-      { nome: "proaxiscockpit1", pontos: 31 },
-    ];
-
+  if (interaction.customId.startsWith("leaderboard_prev_") || interaction.customId.startsWith("leaderboard_next_")) {
+    const ranking = db.prepare("SELECT nome, pontos FROM jogadores ORDER BY pontos DESC").all();
     const itemsPerPage = 10;
     const totalPages = Math.ceil(ranking.length / itemsPerPage);
     const [_, action, currentPageStr] = interaction.customId.split("_");

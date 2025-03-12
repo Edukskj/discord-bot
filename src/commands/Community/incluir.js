@@ -1,6 +1,8 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const db = require('../../db');
 
+const pontosPorVitoria = 100;
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('incluir')
@@ -22,6 +24,7 @@ module.exports = {
       for (const jogador of data) {
         const posicaoNumber = parseInt(jogador.posicao, 10) || 0;
         const vitoriasNovaPartida = (posicaoNumber === 1) ? 1 : 0;
+        const pontosGanhos = vitoriasNovaPartida * pontosPorVitoria;
 
         const existente = db.prepare(`
           SELECT * FROM jogadores
@@ -31,9 +34,9 @@ module.exports = {
         if (!existente) {
           db.prepare(`
             INSERT INTO jogadores
-              (discord_id, nome, level, partidas, kills, vitorias, posicao)
+              (discord_id, nome, level, partidas, kills, vitorias, posicao, pontos)
             VALUES
-              (@discord_id, @nome, @level, @partidas, @kills, @vitorias, @posicao)
+              (@discord_id, @nome, @level, @partidas, @kills, @vitorias, @posicao, @pontos)
           `).run({
             discord_id: jogador.discord_id,
             nome: jogador.nome,
@@ -41,18 +44,17 @@ module.exports = {
             partidas: jogador.partidas || 1,
             kills: jogador.kills || 0,
             vitorias: vitoriasNovaPartida,
-            posicao: posicaoNumber
+            posicao: posicaoNumber,
+            pontos: pontosGanhos
           });
         } else {
           const partidasAtualizadas = (existente.partidas || 0) + 1;
           const killsAtualizadas = (existente.kills || 0) + (jogador.kills || 0);
           const vitoriasAtualizadas = (existente.vitorias || 0) + vitoriasNovaPartida;
+          const pontosAtualizados = (existente.pontos || 0) + pontosGanhos;
 
-          const levelAtualizado = jogador.level !== undefined
-            ? jogador.level
-            : existente.level;
+          const levelAtualizado = jogador.level !== undefined ? jogador.level : existente.level;
 
-        
           db.prepare(`
             UPDATE jogadores
             SET
@@ -61,7 +63,8 @@ module.exports = {
               partidas = @partidas,
               kills = @kills,
               vitorias = @vitorias,
-              posicao = @posicao
+              posicao = @posicao,
+              pontos = @pontos
             WHERE discord_id = @discord_id
           `).run({
             discord_id: jogador.discord_id,
@@ -70,7 +73,8 @@ module.exports = {
             partidas: partidasAtualizadas,
             kills: killsAtualizadas,
             vitorias: vitoriasAtualizadas,
-            posicao: posicaoNumber
+            posicao: posicaoNumber,
+            pontos: pontosAtualizados
           });
         }
       }

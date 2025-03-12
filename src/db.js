@@ -9,7 +9,8 @@ db.exec(`
     partidas INTEGER,
     kills INTEGER,
     vitorias INTEGER,
-    posicao INTEGER
+    posicao INTEGER,
+    pontos INTEGER DEFAULT 0
   )
 `);
 

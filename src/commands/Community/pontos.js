@@ -21,10 +21,15 @@ module.exports = {
     const pontos = row.pontos || 0;
 
     const embed = new EmbedBuilder()
-      .setTitle(`Pontuação de ${user.username}`)
-      .setColor('Blue')
-      .setDescription(`Você possui ${pontos} pontos.`)
-      .setFooter({ text: 'Sistema de Pontos' })
+      .setColor(0x00AE86)
+      .setAuthor({ 
+        name: `Pontuação de ${user.username}`, 
+        iconURL: user.displayAvatarURL({ dynamic: true })
+      })
+      .setTitle(`Você possui ${pontos} pontos!`)
+      .setDescription('Use seus pontos para comprar itens na loja e subir no ranking.')
+      .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 1024 }))
+      .setFooter({ text: 'Sistema de Pontos', iconURL: user.displayAvatarURL({ dynamic: true }) })
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed] });

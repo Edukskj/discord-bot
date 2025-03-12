@@ -1,32 +1,14 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  MessageFlags,
-} = require("discord.js");
-
-const ranking = [
-  { nome: "R4ndomJ", pontos: 75 },
-  { nome: "Obammy", pontos: 75 },
-  { nome: "@plot3sale", pontos: 50 },
-  { nome: "NTS Reaper", pontos: 50 },
-  { nome: "SR Mccock", pontos: 50 },
-  { nome: "Rytas", pontos: 43 },
-  { nome: "Lay Jeno", pontos: 43 },
-  { nome: "Matt8", pontos: 43 },
-  { nome: "Herikawa", pontos: 39 },
-  { nome: "proaxiscockpit1", pontos: 31 },
-  { nome: "proaxiscockpit1", pontos: 31 },
-];
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require("discord.js");
+const db = require('../../db');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("tabela")
     .setDescription("Mostra a tabela de ranking"),
-
+  
   async execute(interaction) {
+    const ranking = db.prepare("SELECT nome, pontos FROM jogadores ORDER BY pontos DESC").all();
+
     const itemsPerPage = 10;
     const totalPages = Math.ceil(ranking.length / itemsPerPage);
 
@@ -50,9 +32,7 @@ module.exports = {
             medal = "🥉";
             break;
         }
-        description += `**${overallIndex + 1}.** ${player.nome} ${medal}\n${
-          player.pontos
-        } pontos\n\n`;
+        description += `**${overallIndex + 1}.** ${player.nome} ${medal}\n${player.pontos} pontos\n\n`;
       });
 
       return new EmbedBuilder()
@@ -85,7 +65,6 @@ module.exports = {
     await interaction.reply({
       embeds: [embed],
       components: [buttons],
-      flags: MessageFlags.Ephemeral,
     });
   },
 };
