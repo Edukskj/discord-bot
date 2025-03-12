@@ -22,6 +22,8 @@ module.exports = {
     const partidas = row.partidas ?? 0;
     const kills = row.kills ?? 0;
     const vitorias = row.vitorias ?? 0;
+    const xpAtual = row.xp ?? 0;
+    const xpParaNext = (level || 1) * 100;
     const winRate = partidas > 0
       ? ((vitorias / partidas) * 100).toFixed(2) + '%'
       : '0%';
@@ -31,6 +33,7 @@ module.exports = {
       .setColor('Green')
       .addFields(
         { name: 'Level', value: String(level), inline: true },
+        { name: 'XP', value: `${xpAtual} / ${xpParaNext}`, inline: true },
         { name: 'Partidas', value: String(partidas), inline: true },
         { name: 'Kills', value: String(kills), inline: true },
         { name: '% Win Rate', value: winRate, inline: true },

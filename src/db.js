@@ -6,6 +6,7 @@ db.exec(`
     discord_id TEXT PRIMARY KEY,
     nome TEXT,
     level INTEGER,
+    xp INTEGER DEFAULT 0,
     partidas INTEGER,
     kills INTEGER,
     vitorias INTEGER,

@@ -1,7 +1,21 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const db = require('../../db');
 
-const pontosPorVitoria = 100;
+const baseXP = 10;
+const xpPorKill = 5;
+const xpBonusVitoria = 20;
+
+function recalcularLevel(xpAtual, levelAtual) {
+  let xpRestante = xpAtual;
+  let nivel = levelAtual;
+  let xpNecessario = nivel * 100;
+  while (xpRestante >= xpNecessario) {
+    xpRestante -= xpNecessario;
+    nivel++;
+    xpNecessario = nivel * 100;
+  }
+  return { novoXP: xpRestante, novoLevel: nivel };
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -24,7 +38,8 @@ module.exports = {
       for (const jogador of data) {
         const posicaoNumber = parseInt(jogador.posicao, 10) || 0;
         const vitoriasNovaPartida = (posicaoNumber === 1) ? 1 : 0;
-        const pontosGanhos = vitoriasNovaPartida * pontosPorVitoria;
+        const xpGanho = baseXP + ((jogador.kills || 0) * xpPorKill) + (posicaoNumber === 1 ? xpBonusVitoria : 0);
+        const pontosGanhos = vitoriasNovaPartida * 100;
 
         const existente = db.prepare(`
           SELECT * FROM jogadores
@@ -33,14 +48,15 @@ module.exports = {
 
         if (!existente) {
           db.prepare(`
-            INSERT INTO jogadores
-              (discord_id, nome, level, partidas, kills, vitorias, posicao, pontos)
-            VALUES
-              (@discord_id, @nome, @level, @partidas, @kills, @vitorias, @posicao, @pontos)
+            INSERT INTO jogadores 
+              (discord_id, nome, level, xp, partidas, kills, vitorias, posicao, pontos)
+            VALUES 
+              (@discord_id, @nome, @level, @xp, @partidas, @kills, @vitorias, @posicao, @pontos)
           `).run({
             discord_id: jogador.discord_id,
             nome: jogador.nome,
-            level: jogador.level || 0,
+            level: jogador.level || 1,
+            xp: xpGanho,
             partidas: jogador.partidas || 1,
             kills: jogador.kills || 0,
             vitorias: vitoriasNovaPartida,
@@ -52,14 +68,17 @@ module.exports = {
           const killsAtualizadas = (existente.kills || 0) + (jogador.kills || 0);
           const vitoriasAtualizadas = (existente.vitorias || 0) + vitoriasNovaPartida;
           const pontosAtualizados = (existente.pontos || 0) + pontosGanhos;
+          const xpAcumulado = (existente.xp || 0) + xpGanho;
+          const levelAtual = existente.level || 1;
 
-          const levelAtualizado = jogador.level !== undefined ? jogador.level : existente.level;
+          const { novoXP, novoLevel } = recalcularLevel(xpAcumulado, levelAtual);
 
           db.prepare(`
             UPDATE jogadores
-            SET
+            SET 
               nome = @nome,
               level = @level,
+              xp = @xp,
               partidas = @partidas,
               kills = @kills,
               vitorias = @vitorias,
@@ -69,7 +88,8 @@ module.exports = {
           `).run({
             discord_id: jogador.discord_id,
             nome: jogador.nome,
-            level: levelAtualizado,
+            level: novoLevel,
+            xp: novoXP,
             partidas: partidasAtualizadas,
             kills: killsAtualizadas,
             vitorias: vitoriasAtualizadas,
@@ -79,7 +99,7 @@ module.exports = {
         }
       }
 
-      await interaction.reply('Dados incluídos ou atualizados com sucesso!');
+      await interaction.reply('Dados atualizados com sucesso!');
     } catch (error) {
       console.error(error);
       await interaction.reply('Houve um erro ao processar o JSON.');
