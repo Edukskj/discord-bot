@@ -1,4 +1,4 @@
-const {  Client,  GatewayIntentBits,  Collection,  Events,  EmbedBuilder,  ActionRowBuilder,  ButtonBuilder,  ButtonStyle,} = require("discord.js");
+const {  Client,  GatewayIntentBits,  Collection,  Events,  EmbedBuilder,  ActionRowBuilder,  ButtonBuilder,  ButtonStyle, ChannelType, PermissionsBitField} = require("discord.js");
 
 const client = new Client({
   intents: [
@@ -48,7 +48,85 @@ client.on("interactionCreate", async (interaction) => {
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isButton()) return;
 
-  if (interaction.customId.startsWith("leaderboard_prev_") || interaction.customId.startsWith("leaderboard_next_")) {
+  if (interaction.customId === "open_ticket") {
+    const guild = interaction.guild;
+    const member = interaction.member;
+
+    const TICKET_CATEGORY_ID = process.env.TICKET_CATEGORY_ID;
+    const STAFF_ROLE_ID = process.env.STAFF_ROLE_ID;
+    const TICKET_ROLE_ID = process.env.TICKET_ROLE_ID;
+
+    const ticketChannel = await guild.channels.create({
+      name: `ticket-${member.user.username}`,
+      type: ChannelType.GuildText,
+      parent: process.env.TICKET_CATEGORY_ID,
+      topic: `ticket_owner:${member.id}`,
+      permissionOverwrites: [
+        {
+          id: guild.id,
+          deny: [PermissionsBitField.Flags.ViewChannel],
+        },
+        {
+          id: member.id,
+          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory],
+        },
+        {
+          id: (await guild.roles.fetch(process.env.STAFF_ROLE_ID)).id,
+          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory],
+        },
+      ],
+    });
+
+    const ticketRole = guild.roles.cache.get(TICKET_ROLE_ID);
+    if (ticketRole && !member.roles.cache.has(ticketRole.id)) {
+      await member.roles.add(ticketRole);
+    }
+
+    const ticketEmbed = new EmbedBuilder()
+      .setTitle("Ticket de Suporte")
+      .setDescription("Este é o seu canal de suporte. Quando seu problema for resolvido, clique no botão abaixo para fechar o ticket.")
+      .setColor("Green")
+      .setTimestamp();
+
+    const closeButton = new ButtonBuilder()
+      .setCustomId("close_ticket")
+      .setLabel("Fechar Ticket")
+      .setStyle(ButtonStyle.Danger);
+
+    const closeRow = new ActionRowBuilder().addComponents(closeButton);
+
+    await ticketChannel.send({ embeds: [ticketEmbed], components: [closeRow] });
+    await interaction.reply({ content: `Ticket criado: ${ticketChannel}`, ephemeral: true });
+  } 
+  else if (interaction.customId === "close_ticket") {
+    const guild = interaction.guild;
+    const channel = interaction.channel;
+  
+    const topic = channel.topic;
+    let ticketOwnerId = null;
+    if (topic && topic.startsWith("ticket_owner:")) {
+      ticketOwnerId = topic.split(":")[1];
+    }
+  
+    if (ticketOwnerId) {
+      try {
+        const ticketOwner = await guild.members.fetch(ticketOwnerId);
+        const ticketRole = guild.roles.cache.get(process.env.TICKET_ROLE_ID);
+        if (ticketRole && ticketOwner.roles.cache.has(ticketRole.id)) {
+          await ticketOwner.roles.remove(ticketRole);
+        }
+      } catch (err) {
+        console.error("Erro ao remover a role do ticket owner:", err);
+      }
+    }
+  
+    await interaction.reply({ content: "Ticket será fechado em 5 segundos...", ephemeral: true });
+    setTimeout(() => {
+      channel.delete().catch(console.error);
+    }, 5000);
+  }
+
+  else if (interaction.customId.startsWith("leaderboard_prev_") || interaction.customId.startsWith("leaderboard_next_")) {
     const ranking = db.prepare("SELECT nome, pontos FROM jogadores ORDER BY pontos DESC").all();
     const itemsPerPage = 10;
     const totalPages = Math.ceil(ranking.length / itemsPerPage);
