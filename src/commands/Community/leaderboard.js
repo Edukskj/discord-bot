@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 const db = require('../../db');
 
 module.exports = {
@@ -6,11 +6,24 @@ module.exports = {
     .setName("tabela")
     .setDescription("Mostra a tabela de ranking"),
   
-  async execute(interaction) {
-    const ranking = db.prepare("SELECT nome, pontos FROM jogadores ORDER BY pontos DESC").all();
+  async execute(interaction, client) {
+    const configChannelRow = db.prepare("SELECT value FROM config WHERE key = 'top20_channel'").get();
+    const configModeRow = db.prepare("SELECT value FROM config WHERE key = 'top20_mode'").get();
 
+    const top20ChannelId = configChannelRow ? configChannelRow.value : null;
+    const top20Mode = configModeRow ? configModeRow.value : null;
+    
+    let sortColumn = "pontos";
+    if (top20Mode === "vitorias") {
+      sortColumn = "vitorias";
+    } else if (top20Mode === "level") {
+      sortColumn = "level";
+    }
+    
+    const ranking = db.prepare(`SELECT nome, ${sortColumn} as score FROM jogadores ORDER BY ${sortColumn} DESC`).all();
+    
     const itemsPerPage = 10;
-    const totalPages = Math.ceil(ranking.length / itemsPerPage);
+    const totalPages = Math.ceil(ranking.length / itemsPerPage) || 1;
 
     function generateEmbed(page) {
       const startIndex = (page - 1) * itemsPerPage;
@@ -32,11 +45,11 @@ module.exports = {
             medal = "🥉";
             break;
         }
-        description += `**${overallIndex + 1}.** ${player.nome} ${medal}\n${player.pontos} pontos\n\n`;
+        description += `**${overallIndex + 1}.** ${player.nome} ${medal}\n${player.score} ${sortColumn}\n\n`;
       });
 
       return new EmbedBuilder()
-        .setTitle(`Ranking - Página ${page}/${totalPages}`)
+        .setTitle(`Ranking - Página ${page}/${totalPages} (${sortColumn})`)
         .setColor("Blue")
         .setDescription(description)
         .setFooter({ text: "Atualizado agora mesmo" })
@@ -62,9 +75,23 @@ module.exports = {
     const embed = generateEmbed(page);
     const buttons = generateButtons(page);
 
-    await interaction.reply({
-      embeds: [embed],
-      components: [buttons],
-    });
+    if (top20ChannelId && interaction.channel.id !== top20ChannelId) {
+      try {
+        const targetChannel = await client.channels.fetch(top20ChannelId);
+        await targetChannel.send({
+          embeds: [embed],
+          components: [buttons],
+        });
+        await interaction.reply({ content: `Leaderboard enviada no canal ${targetChannel}.`, ephemeral: true });
+      } catch (error) {
+        console.error(error);
+        await interaction.reply({ content: 'Erro ao enviar leaderboard no canal configurado.', ephemeral: true });
+      }
+    } else {
+      await interaction.reply({
+        embeds: [embed],
+        components: [buttons],
+      });
+    }
   },
 };
