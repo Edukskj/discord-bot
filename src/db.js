@@ -15,4 +15,16 @@ db.exec(`
   )
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS itens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT,
+    descricao TEXT,
+    tipo TEXT,         -- 'pronta_entrega' || 'conversa'
+    preco INTEGER,
+    estoque INTEGER DEFAULT 0,   -- usado para itens de pronta entrega (e opcional para itens de conversa)
+    recompensa TEXT    -- exemplo: código de gift card, apenas para itens de pronta entrega
+  )
+`);
+
 module.exports = db;
